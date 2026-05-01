@@ -19,6 +19,7 @@ const ROLES = ["admin", "instructor", "alumno"] as const;
 const GENEROS = ["masculino", "femenino", "otro", "prefiero_no_decir"] as const;
 const METODOS_PAGO = ["efectivo", "transferencia", "tarjeta", "nequi"] as const;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const DEFAULT_EMAIL_RATE_LIMIT_SECONDS = 60;
 const MISSING_USUARIOS_TABLE_HINT =
   "Falta la tabla public.usuarios en Supabase. Ejecuta el script mobile/supabase-schema.sql en el SQL Editor.";
 
@@ -69,7 +70,7 @@ function getRegisterErrorMessage(errorMessage: string) {
   }
 
   if (message.includes("email rate limit exceeded")) {
-    return "Se alcanzo el limite de correos por seguridad. Espera un momento e intenta de nuevo.";
+    return "Supabase alcanzo el limite de correos de confirmacion. Espera un minuto o desactiva Confirm email en Authentication > Providers > Email mientras haces pruebas.";
   }
 
   if (message.includes("user already registered")) {
@@ -222,9 +223,13 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         const friendlyMessage = getRegisterErrorMessage(error.message);
         setMensajeError(friendlyMessage);
         const retryAfterSeconds = parseRetryAfterSeconds(error.message);
-        if (retryAfterSeconds) {
-          setBloqueoHasta(Date.now() + retryAfterSeconds * 1000);
-          setSegundosBloqueo(retryAfterSeconds);
+        const rateLimitSeconds =
+          error.message.toLowerCase().includes("email rate limit exceeded")
+            ? DEFAULT_EMAIL_RATE_LIMIT_SECONDS
+            : retryAfterSeconds;
+        if (rateLimitSeconds) {
+          setBloqueoHasta(Date.now() + rateLimitSeconds * 1000);
+          setSegundosBloqueo(rateLimitSeconds);
         }
         return;
       }
