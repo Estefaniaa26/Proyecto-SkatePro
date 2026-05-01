@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -107,6 +107,26 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
   const [mensajeError, setMensajeError] = useState("");
   const [cargando, setCargando] = useState(false);
   const [bloqueoHasta, setBloqueoHasta] = useState<number | null>(null);
+  const [segundosBloqueo, setSegundosBloqueo] = useState(0);
+
+  useEffect(() => {
+    if (!bloqueoHasta) {
+      setSegundosBloqueo(0);
+      return;
+    }
+
+    const actualizarBloqueo = () => {
+      const seconds = Math.max(0, Math.ceil((bloqueoHasta - Date.now()) / 1000));
+      setSegundosBloqueo(seconds);
+      if (seconds <= 0) {
+        setBloqueoHasta(null);
+      }
+    };
+
+    actualizarBloqueo();
+    const intervalId = setInterval(actualizarBloqueo, 1000);
+    return () => clearInterval(intervalId);
+  }, [bloqueoHasta]);
 
   function setField(
     key: keyof typeof form,
@@ -204,6 +224,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
         const retryAfterSeconds = parseRetryAfterSeconds(error.message);
         if (retryAfterSeconds) {
           setBloqueoHasta(Date.now() + retryAfterSeconds * 1000);
+          setSegundosBloqueo(retryAfterSeconds);
         }
         return;
       }
@@ -390,12 +411,20 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
           {mensajeError ? <Text style={styles.errorText}>{mensajeError}</Text> : null}
 
           <TouchableOpacity
-            style={[styles.button, styles.registerButton, cargando ? styles.buttonDisabled : null]}
+            style={[
+              styles.button,
+              styles.registerButton,
+              cargando || segundosBloqueo > 0 ? styles.buttonDisabled : null
+            ]}
             onPress={handleRegister}
-            disabled={cargando}
+            disabled={cargando || segundosBloqueo > 0}
           >
             <Text style={styles.buttonText}>
-              {cargando ? "Registrando..." : "Registrarme"}
+              {cargando
+                ? "Registrando..."
+                : segundosBloqueo > 0
+                  ? `Espera ${segundosBloqueo}s`
+                  : "Registrarme"}
             </Text>
           </TouchableOpacity>
 
