@@ -76,6 +76,14 @@ function getRegisterErrorMessage(errorMessage: string) {
     return "Este correo ya esta registrado. Inicia sesion o recupera tu contrasena.";
   }
 
+  if (message.includes("signup") && message.includes("disabled")) {
+    return "El registro de usuarios esta deshabilitado en Supabase Auth. Activa Email signups en Authentication > Providers > Email.";
+  }
+
+  if (message.includes("email provider is disabled")) {
+    return "El proveedor Email esta deshabilitado en Supabase Auth. Activalo en Authentication > Providers > Email.";
+  }
+
   return errorMessage;
 }
 

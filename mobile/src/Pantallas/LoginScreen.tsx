@@ -35,6 +35,24 @@ function getUsuariosTableErrorMessage(error: { message?: string } | null) {
   return null;
 }
 
+function getLoginErrorMessage(errorMessage: string) {
+  const message = errorMessage.toLowerCase();
+
+  if (message.includes("email not confirmed")) {
+    return "Tu correo aun no esta confirmado. Revisa tu bandeja de entrada o desactiva la confirmacion de correo en Supabase Auth para pruebas.";
+  }
+
+  if (message.includes("invalid login credentials")) {
+    return "Credenciales invalidas. Verifica el correo y la contrasena.";
+  }
+
+  if (message.includes("email provider is disabled")) {
+    return "El proveedor Email esta deshabilitado en Supabase Auth.";
+  }
+
+  return errorMessage;
+}
+
 type LoginScreenProps = {
   navigation: any;
 };
@@ -96,7 +114,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           setMensajeError(perfilExistente ? INVALID_CREDENTIALS_HINT : "Credenciales invalidas.");
           return;
         }
-        setMensajeError(error?.message || "Credenciales invalidas.");
+        setMensajeError(error?.message ? getLoginErrorMessage(error.message) : "Credenciales invalidas.");
         return;
       }
 
